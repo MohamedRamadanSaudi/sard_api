@@ -1,7 +1,7 @@
 doctype html
-html(lang="en")
+html(lang="ar", dir="rtl")
     head
-        title Email Verification
+        title تحقق البريد الإلكتروني
         meta(name='viewport', content='width=device-width, initial-scale=1.0')
         style.
             body {
@@ -14,6 +14,7 @@ html(lang="en")
                 margin: 0;
                 padding: 0;
                 height: 100vh;
+                direction: rtl;
             }
             .container {
                 background-color: #fff;
@@ -47,13 +48,14 @@ html(lang="en")
             }
     body
         .container
-            h1 Email Verification
-            p Hello,
-            p Your verification code is:
+            h1 تحقق البريد الإلكتروني
+            p مرحباً،
+            p كود التحقق الخاص بك هو:
             p.code #{code}
-            p Please use this code to verify your email address.
-            p If you didn’t request this, you can safely ignore this email.
+            p يرجى استخدام هذا الكود لتأكيد عنوان بريدك الإلكتروني.
+            p سينتهي صلاحية الكود في غضون #{expire} دقائق.
+            p إذا لم تطلب ذلك، يمكنك تجاهل هذا البريد الإلكتروني بأمان.
             p.footer
-                | For assistance, contact the Sard admin at 
+                | للمساعدة، يرجى التواصل مع إدارة سرد على 
                 a(href="mailto:support@sard.com") support@sard.com
-            p.footer Thank you, Sard Team
+            p.footer شكراً، فريق سرد

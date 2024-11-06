@@ -41,7 +41,7 @@ export class MailsService {
     }
   }
 
-  private async sendMail(to: string, code: string, expireTime: Date, subject: string, templatePath: string) {
+  private async sendMail(to: string, code: string, expireTime: number, subject: string, templatePath: string) {
     try {
       const html = await this.renderTemplate(templatePath, { code, expire: expireTime });
       await this.transporter.sendMail({
@@ -59,9 +59,12 @@ export class MailsService {
   async sendEmailResetPasswordCode(email: string) {
     joiValidator({ email: email }, Joi.object({ email: Joi.string().email().required() }));
     const { code, hashedCode } = await this.generateCode();
+
+    const expiryInMinutes = 10;
+
     const expiryDate = new Date();
     // expiry date is 10 minutes from now
-    expiryDate.setMinutes(expiryDate.getMinutes() + 10);
+    expiryDate.setMinutes(expiryDate.getMinutes() + expiryInMinutes);
     const templatePath = path.join(process.cwd(), 'src', 'mails', 'templates', 'forgetPassword.pug');
     // Create a new reset OTP document with the expiry date
     await this.prisma.user.update(
@@ -74,15 +77,18 @@ export class MailsService {
       }
     );
     // Send the email
-    await this.sendMail(email, code, expiryDate, "Reset Password", templatePath);
+    await this.sendMail(email, code, expiryInMinutes, "إعادة تعيين كلمة المرور لتطبيق سَرد", templatePath);
   }
 
   async sendEmailVerificationCode(email: string) {
     joiValidator({ email: email }, Joi.object({ email: Joi.string().email().required() }));
     const { code, hashedCode } = await this.generateCode();
+
+    const expiryInMinutes = 10;
+
     const expiryDate = new Date();
     // expiry date is 10 minutes from now
-    expiryDate.setMinutes(expiryDate.getMinutes() + 10);
+    expiryDate.setMinutes(expiryDate.getMinutes() + expiryInMinutes);
     const templatePath = path.join(process.cwd(), 'src', 'mails', 'templates', 'verification.pug');
     // Create a new verification OTP document with the expiry
     await this.prisma.user.update({
@@ -93,6 +99,6 @@ export class MailsService {
       },
     });
     // Send the email
-    this.sendMail(email, code, expiryDate, "Email Verification", templatePath);
+    this.sendMail(email, code, expiryInMinutes, "تحقق البريد الإلكتروني لتطبيق سَرد", templatePath);
   }
 }
