@@ -14,16 +14,17 @@ datasource db {
 }
 
 model User {
-  id                     Int       @id @default(autoincrement())
-  email                  String    @unique
+  id                     Int        @id @default(autoincrement())
+  email                  String     @unique
   password               String
-  isVerified             Boolean   @default(false)
+  isVerified             Boolean    @default(false)
   otp                    String?
   otpExpiry              DateTime?
   passwordResetOtp       String?
   passwordResetOtpExpiry DateTime?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @default(now()) @updatedAt
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @default(now()) @updatedAt
+  UserBook               UserBook[]
 }
 
 model Admin {
@@ -32,4 +33,50 @@ model Admin {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Book {
+  id           Int            @id @default(autoincrement())
+  title        String
+  description  String
+  authorId     Int?
+  Author       Author?        @relation(fields: [authorId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+  BookCategory BookCategory[]
+  UserBook     UserBook[]
+}
+
+model Author {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  books     Book[]
+}
+
+model Category {
+  id           Int            @id @default(autoincrement())
+  name         String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+  BookCategory BookCategory[]
+}
+
+model BookCategory {
+  bookId     Int
+  categoryId Int
+  book       Book     @relation(fields: [bookId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@id([bookId, categoryId])
+}
+
+model UserBook {
+  userId Int
+  bookId Int
+  user   User @relation(fields: [userId], references: [id])
+  book   Book @relation(fields: [bookId], references: [id])
+
+  @@id([userId, bookId])
 }
