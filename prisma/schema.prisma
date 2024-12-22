@@ -9,26 +9,37 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL_PROD")
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                     Int        @id @default(autoincrement())
-  email                  String     @unique
+  id                     String      @id @default(auto()) @map("_id") @db.ObjectId
+  name                   String
+  email                  String      @unique
   password               String
-  isVerified             Boolean    @default(false)
+  isVerified             Boolean     @default(false)
   otp                    String?
   otpExpiry              DateTime?
   passwordResetOtp       String?
   passwordResetOtpExpiry DateTime?
-  createdAt              DateTime   @default(now())
-  updatedAt              DateTime   @default(now()) @updatedAt
-  UserBook               UserBook[]
+  photo                  String?
+  gender                 GenderType?
+  birthday               DateTime?
+  phone                  String?
+  points                 Int         @default(0)
+  lastLoginDate          DateTime?
+  streak                 Int         @default(0)
+  reviews                Review[]
+  favorites              Favorite[]
+  myBooks                Book[]
+  orders                 Order[]
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @default(now()) @updatedAt
 }
 
 model Admin {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
@@ -36,47 +47,84 @@ model Admin {
 }
 
 model Book {
-  id           Int            @id @default(autoincrement())
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
   title        String
   description  String
-  authorId     Int?
+  cover        String?
+  duration     Int
+  rating       Float          @default(0)
+  audio        String
+  price        Float?
+  price_points Int?
+  is_free      Boolean        @default(false)
+  authorId     String?        @db.ObjectId
   Author       Author?        @relation(fields: [authorId], references: [id])
+  BookCategory BookCategory[]
+  reviews      Review[]
+  favorites    Favorite[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @default(now()) @updatedAt
-  BookCategory BookCategory[]
-  UserBook     UserBook[]
+  User         User?          @relation(fields: [userId], references: [id])
+  userId       String?        @db.ObjectId
 }
 
 model Author {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
+  photo     String?
+  books     Book[]
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-  books     Book[]
 }
 
 model Category {
-  id           Int            @id @default(autoincrement())
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
   name         String
+  photo        String?
+  BookCategory BookCategory[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @default(now()) @updatedAt
-  BookCategory BookCategory[]
 }
 
 model BookCategory {
-  bookId     Int
-  categoryId Int
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  bookId     String   @db.ObjectId
+  categoryId String   @db.ObjectId
   book       Book     @relation(fields: [bookId], references: [id])
   category   Category @relation(fields: [categoryId], references: [id])
-
-  @@id([bookId, categoryId])
+  createdAt  DateTime @default(now())
 }
 
-model UserBook {
-  userId Int
-  bookId Int
-  user   User @relation(fields: [userId], references: [id])
-  book   Book @relation(fields: [bookId], references: [id])
+model Review {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @db.ObjectId
+  bookId        String   @db.ObjectId
+  numberOfStars Int
+  review        String?
+  user          User     @relation(fields: [userId], references: [id])
+  book          Book     @relation(fields: [bookId], references: [id])
+  createdAt     DateTime @default(now())
+}
 
-  @@id([userId, bookId])
+model Favorite {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  bookId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  book      Book     @relation(fields: [bookId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  price     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+enum GenderType {
+  male
+  female
 }
