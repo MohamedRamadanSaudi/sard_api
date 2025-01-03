@@ -57,6 +57,12 @@ export class AuthService {
   }
 
   async register(user: RegisterUserDto) {
+
+    const existingUser = await this.usersService.findByEmail(user.email);
+    if (existingUser) {
+      throw new HttpException('User already exists', HttpStatus.BAD_REQUEST);
+    }
+
     const hashedPassword = await bcrypt.hash(user.password, 10);
     const newUser: User = await this.prisma.user.create({ data: { ...user, password: hashedPassword } as User })
 
