@@ -22,13 +22,13 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   getUser(@Param('id') id: string) {
-    return this.usersService.getUser(+id);
+    return this.usersService.getUser(id);
   }
 
   @Patch(":id")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.updateUser(+id, updateUserDto);
+    return this.usersService.updateUser(id, updateUserDto);
   }
 }
