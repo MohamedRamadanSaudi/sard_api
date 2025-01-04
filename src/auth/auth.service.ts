@@ -139,14 +139,65 @@ export class AuthService {
   }
 
   async resetPassword(resetData: ResetPasswordDto) {
-    const user = await this.prisma.user.findFirst({ where: { email: resetData.email } })
+    try {
+      // Find user and ensure they exist
+      const user = await this.prisma.user.findUnique({
+        where: { email: resetData.email.toLowerCase() },
+        select: {
+          id: true,
+          password: true,
+          isVerified: true,
+        }
+      });
 
-    const hashedPassword = await bcrypt.hash(resetData.password, 10);
-    await this.prisma.user.update({ where: { id: user.id }, data: { password: hashedPassword, passwordResetOtp: null, passwordResetOtpExpiry: null } })
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
 
-    return {
-      status: 'success',
-      message: 'Password reset successfully',
+      // Check if user is verified
+      if (!user.isVerified) {
+        throw new HttpException('Email not verified', HttpStatus.BAD_REQUEST);
+      }
+
+      // Validate old password
+      const isOldPasswordValid = await bcrypt.compare(resetData.old_password, user.password);
+      if (!isOldPasswordValid) {
+        throw new HttpException('Current password is incorrect', HttpStatus.BAD_REQUEST);
+      }
+
+      // Check if new password is same as old password
+      const isSamePassword = await bcrypt.compare(resetData.new_password, user.password);
+      if (isSamePassword) {
+        throw new HttpException('New password must be different from current password', HttpStatus.BAD_REQUEST);
+      }
+
+      // Hash new password and update user
+      const hashedPassword = await bcrypt.hash(resetData.new_password, 10);
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          password: hashedPassword,
+          passwordResetOtp: null,
+          passwordResetOtpExpiry: null,
+          updatedAt: new Date(),
+        }
+      });
+
+      return {
+        status: 'success',
+        message: 'Password updated successfully',
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      this.logger.error('Password reset failed', error);
+      throw new HttpException(
+        'Failed to reset password',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
     }
   }
 }

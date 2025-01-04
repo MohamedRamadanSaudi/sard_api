@@ -1,4 +1,4 @@
-import { IsEmail, IsLowercase, IsString } from "class-validator";
+import { IsEmail, IsLowercase, IsString, MinLength } from "class-validator";
 
 export class CreateOtpDto {
     @IsEmail()
@@ -21,5 +21,9 @@ export class ResetPasswordDto {
     email: string;
 
     @IsString()
-    password: string;
+    old_password: string;
+
+    @IsString()
+    @MinLength(6)
+    new_password: string;
 }
