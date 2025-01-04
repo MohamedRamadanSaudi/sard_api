@@ -23,11 +23,15 @@ export class AuthorsController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'user')
   findAll() {
     return this.authorsService.findAll();
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'user')
   findOne(@Param('id') id: string) {
     return this.authorsService.findOne(id);
   }
@@ -41,6 +45,8 @@ export class AuthorsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
   remove(@Param('id') id: string) {
     return this.authorsService.remove(id);
   }
