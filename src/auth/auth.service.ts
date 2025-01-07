@@ -3,7 +3,7 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { Logger } from '@nestjs/common';
-import { CreateOtpDto, ResetOtpDto, ResetPasswordDto } from './dto/createOtp.dto';
+import { ChangePasswordDto, CreateOtpDto, ResetOtpDto, ResetPasswordDto } from './dto/createOtp.dto';
 import { MailsService } from 'src/mails/mails.service';
 import { RegisterUserDto } from './dto/register.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -138,11 +138,11 @@ export class AuthService {
     }
   }
 
-  async resetPassword(resetData: ResetPasswordDto) {
+  async changePassword(changePasswordDto: ChangePasswordDto) {
     try {
       // Find user and ensure they exist
       const user = await this.prisma.user.findUnique({
-        where: { email: resetData.email.toLowerCase() },
+        where: { email: changePasswordDto.email.toLowerCase() },
         select: {
           id: true,
           password: true,
@@ -160,19 +160,19 @@ export class AuthService {
       }
 
       // Validate old password
-      const isOldPasswordValid = await bcrypt.compare(resetData.old_password, user.password);
+      const isOldPasswordValid = await bcrypt.compare(changePasswordDto.old_password, user.password);
       if (!isOldPasswordValid) {
         throw new HttpException('Current password is incorrect', HttpStatus.BAD_REQUEST);
       }
 
       // Check if new password is same as old password
-      const isSamePassword = await bcrypt.compare(resetData.new_password, user.password);
+      const isSamePassword = await bcrypt.compare(changePasswordDto.new_password, user.password);
       if (isSamePassword) {
         throw new HttpException('New password must be different from current password', HttpStatus.BAD_REQUEST);
       }
 
       // Hash new password and update user
-      const hashedPassword = await bcrypt.hash(resetData.new_password, 10);
+      const hashedPassword = await bcrypt.hash(changePasswordDto.new_password, 10);
 
       await this.prisma.user.update({
         where: { id: user.id },
@@ -199,5 +199,37 @@ export class AuthService {
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { email, new_password } = resetPasswordDto;
+
+    // Check if user exists and OTP hasn't expired
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        passwordResetOtpExpiry: true
+      }
+    });
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (!user.passwordResetOtpExpiry || user.passwordResetOtpExpiry < new Date()) {
+      throw new HttpException('Reset code has expired. Please request a new one', HttpStatus.BAD_REQUEST);
+    }
+
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    return this.prisma.user.update({
+      where: { email },
+      data: {
+        password: hashedPassword,
+        passwordResetOtp: null,
+        passwordResetOtpExpiry: null
+      }
+    });
   }
 }

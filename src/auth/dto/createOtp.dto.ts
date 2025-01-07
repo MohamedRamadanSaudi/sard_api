@@ -15,7 +15,7 @@ export class ResetOtpDto {
     email: string;
 }
 
-export class ResetPasswordDto {
+export class ChangePasswordDto {
     @IsEmail()
     @IsLowercase()
     email: string;
@@ -26,4 +26,14 @@ export class ResetPasswordDto {
     @IsString()
     @MinLength(6)
     new_password: string;
+}
+
+export class ResetPasswordDto {
+    @IsString()
+    @MinLength(6)
+    new_password: string;
+
+    @IsEmail()
+    @IsLowercase()
+    email: string;
 }

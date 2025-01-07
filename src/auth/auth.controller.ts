@@ -2,7 +2,7 @@ import { Controller, Post, Body, UnauthorizedException, ValidationPipe, Patch } 
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register.dto';
 import { LoginUserDto } from './dto/login.dto';
-import { CreateOtpDto, ResetOtpDto, ResetPasswordDto } from './dto/createOtp.dto';
+import { ChangePasswordDto, CreateOtpDto, ResetOtpDto, ResetPasswordDto } from './dto/createOtp.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -47,8 +47,13 @@ export class AuthController {
     return this.authService.verifyEmailOtp(resetData)
   }
 
+  @Patch('change-password')
+  changePassword(@Body(ValidationPipe) changePasswordDto: ChangePasswordDto) {
+    return this.authService.changePassword(changePasswordDto)
+  }
+
   @Patch('reset-password')
-  resetPassword(@Body(ValidationPipe) resetData: ResetPasswordDto) {
-    return this.authService.resetPassword(resetData)
+  resetPassword(@Body(ValidationPipe) resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto)
   }
 }
