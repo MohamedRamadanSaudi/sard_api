@@ -1,26 +1,72 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class BooksService {
-  create(createBookDto: CreateBookDto) {
-    return 'This action adds a new book';
+  constructor(private readonly prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) { }
+
+  async create(createBookDto: CreateBookDto) {
+    return this.prisma.book.create({
+      data: {
+        ...createBookDto,
+        rating: 0,
+      },
+    });
   }
 
-  findAll() {
-    return `This action returns all books`;
+  async findAll() {
+    return this.prisma.book.findMany({
+      include: {
+        Author: true,
+        BookCategory: {
+          include: {
+            category: true,
+          },
+        },
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} book`;
+  async findOne(id: string) {
+    const book = await this.prisma.book.findFirst({
+      where: { id },
+      include: {
+        Author: true,
+        BookCategory: {
+          include: {
+            category: true,
+          },
+        },
+        reviews: true,
+      },
+    });
+
+    if (!book) {
+      throw new NotFoundException(`Book with ID ${id} not found`);
+    }
+
+    return book;
   }
 
-  update(id: number, updateBookDto: UpdateBookDto) {
-    return `This action updates a #${id} book`;
+  async update(id: string, updateBookDto: UpdateBookDto) {
+    await this.findOne(id); // Check if book exists
+
+    return this.prisma.book.update({
+      where: { id },
+      data: updateBookDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} book`;
+  async remove(id: string) {
+    await this.findOne(id); // Check if book exists
+
+    return this.prisma.book.delete({
+      where: { id },
+    });
   }
 }
