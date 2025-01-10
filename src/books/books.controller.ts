@@ -38,6 +38,7 @@ export class BooksController {
     return this.booksService.update(id, updateBookDto);
   }
 
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
