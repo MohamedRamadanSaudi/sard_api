@@ -65,4 +65,21 @@ export class BooksController {
   remove(@Param('id') id: string) {
     return this.booksService.remove(id);
   }
+
+  @Get(':id/summary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'user')
+  async getBookSummary(@Param('id') id: string) {
+    return this.booksService.generateBookSummary(id);
+  }
+
+  @Post('suggest-description')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async suggestDescription(
+    @Body('title') title: string,
+    @Body('genre') genre: string,
+  ) {
+    return this.booksService.suggestDescription(title, genre);
+  }
 }

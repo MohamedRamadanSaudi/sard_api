@@ -5,6 +5,7 @@ import { UpdateBookDto } from './dto/update-book.dto';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { parse } from 'path';
 import { GoogleDriveService } from 'src/common/services/google-drive.service';
+import { GroqService } from '../common/services/groq.service';
 
 @Injectable()
 export class BooksService {
@@ -12,6 +13,7 @@ export class BooksService {
     private readonly prisma: PrismaService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly googleDriveService: GoogleDriveService,
+    private readonly groqService: GroqService,
   ) { }
 
   async create(
@@ -195,5 +197,16 @@ export class BooksService {
     return this.prisma.book.delete({
       where: { id },
     });
+  }
+
+  async generateBookSummary(id: string) {
+    const book = await this.findOne(id);
+    const summary = await this.groqService.summarizeBook(book.description, "default-user");
+    return { summary };
+  }
+
+  async suggestDescription(title: string, genre: string) {
+    const description = await this.groqService.generateBookDescription(title, genre, "default-user");
+    return { description };
   }
 }

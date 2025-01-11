@@ -7,6 +7,7 @@ import { GoogleDriveService } from 'src/common/services/google-drive.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
+import { GroqService } from '../common/services/groq.service';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { ConfigModule } from '@nestjs/config';
     PrismaService,
     JwtService,
     CloudinaryService,
-    GoogleDriveService
+    GoogleDriveService,
+    GroqService,
   ],
   exports: [BooksService],
 })
