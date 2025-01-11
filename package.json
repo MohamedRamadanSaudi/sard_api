@@ -20,6 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.15.0",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/axios": "^3.1.1",
     "@nestjs/common": "^10.0.0",
@@ -35,6 +36,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cloudinary": "^2.5.1",
+    "googleapis": "^144.0.0",
     "groq-sdk": "^0.7.0",
     "joi": "^17.13.3",
     "multer": "^1.4.5-lts.1",
