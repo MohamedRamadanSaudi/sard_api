@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, Min, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateBookDto {
   @IsString()
@@ -10,19 +10,16 @@ export class CreateBookDto {
   @IsOptional()
   cover?: any;
 
-  @IsNumber()
-  @Min(0)
-  duration: number;
+  @IsOptional()
+  duration?: number;
 
-  @IsString()
-  @IsNotEmpty()
-  audio: string;
 
-  @IsNumber()
+  @IsOptional()
+  audio?: any;
+
   @IsOptional()
   price?: number;
 
-  @IsNumber()
   @IsOptional()
   price_points?: number;
 
