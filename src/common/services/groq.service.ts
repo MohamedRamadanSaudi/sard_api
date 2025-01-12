@@ -50,10 +50,11 @@ export class GroqService {
         messages: [
           {
             role: 'system',
-            content: `You are an AI assistant specialized in books and literature. 
-                     Please respond in Arabic language only. 
-                     If the question is not related to books, reading, or literature, 
-                     politely decline to answer and explain that you only discuss book-related topics.`,
+            content: `أنت مساعد ذكي متخصص في الكتب والأدب.
+                     يجب أن تجيب دائماً باللغة العربية الفصحى مع التشكيل الكامل.
+                     إذا كان السؤال لا يتعلق بالكتب أو القراءة أو الأدب،
+                     فيرجى الاعتذار بأدب وتوضيح أنك تناقش فقط المواضيع المتعلقة بالكتب.
+                     احرص على استخدام التشكيل الكامل في كل إجاباتك.`,
           },
           {
             role: 'user',
@@ -72,12 +73,12 @@ export class GroqService {
   }
 
   async summarizeBook(bookDescription: string, userId: string) {
-    const prompt = `قم بتلخيص هذا الكتاب بشكل موجز ودقيق: ${bookDescription}`;
+    const prompt = `قم بتلخيص هذا الكتاب بشكل موجز ودقيق مع استخدام التشكيل الكامل: ${bookDescription}`;
     return this.chat(prompt, userId);
   }
 
   async generateBookDescription(title: string, genre: string, userId: string) {
-    const prompt = `اكتب وصفاً جذاباً لكتاب من فئة ${genre} بعنوان "${title}"`;
+    const prompt = `اكتب وصفاً جذاباً لكتاب من فئة ${genre} بعنوان "${title}" مع استخدام التشكيل الكامل للنص العربي`;
     return this.chat(prompt, userId);
   }
 
