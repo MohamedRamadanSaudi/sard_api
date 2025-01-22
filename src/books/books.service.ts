@@ -6,6 +6,7 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { parse } from 'path';
 import { GoogleDriveService } from 'src/common/services/google-drive.service';
 import { GroqService } from '../common/services/groq.service';
+import { PlayService } from '../common/services/play.service';
 
 @Injectable()
 export class BooksService {
@@ -14,6 +15,7 @@ export class BooksService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly googleDriveService: GoogleDriveService,
     private readonly groqService: GroqService,
+    private readonly playService: PlayService,
   ) { }
 
   async create(
