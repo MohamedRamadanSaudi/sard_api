@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { GroqService } from '../common/services/groq.service';
+import { PlayService } from '../common/services/play.service';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { GroqService } from '../common/services/groq.service';
     CloudinaryService,
     GoogleDriveService,
     GroqService,
+    PlayService,
   ],
   exports: [BooksService],
 })

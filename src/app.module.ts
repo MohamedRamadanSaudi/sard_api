@@ -8,9 +8,10 @@ import { AdminModule } from './admin/admin.module';
 import { BooksModule } from './books/books.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AuthorsModule } from './authors/authors.module';
+import { FavoriteModule } from './favorite/favorite.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, AdminModule, BooksModule, CategoriesModule, AuthorsModule],
+  imports: [PrismaModule, AuthModule, UsersModule, AdminModule, BooksModule, CategoriesModule, AuthorsModule, FavoriteModule],
   controllers: [AppController],
   providers: [AppService],
 })

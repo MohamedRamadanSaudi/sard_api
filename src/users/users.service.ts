@@ -1,12 +1,17 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
-import { UpdateUserDto } from './dto/updateUser.dto';
+import { UpdateMeDto, UpdateUserDto } from './dto/updateUser.dto';
 import { CreateUserDto } from './dto/createUser.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { parse } from 'path';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) { }
 
   async createUser(createUserDto: CreateUserDto) {
     // if user already exists, send an error to the client
@@ -37,7 +42,6 @@ export class UsersService {
   async getUser(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, isVerified: true },
     });
     if (!user) {
       throw new BadRequestException('User not found');
@@ -54,6 +58,38 @@ export class UsersService {
       where: { id },
       data: updateUserDto,
       select: { id: true, email: true, isVerified: true },
+    });
+  }
+
+  async updateMe(id: string, updateMeDto: UpdateMeDto, photo?: Express.Multer.File) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    let photoUrl = user.photo;
+    if (photo) {
+      photoUrl = await this.cloudinaryService.uploadImage(photo);
+
+      if (user?.photo) {
+        const urlParts = user.photo.split('/');
+        const publicIdWithExtension = urlParts[urlParts.length - 1];
+        const publicId = parse(publicIdWithExtension).name;
+
+        await this.cloudinaryService.deleteImage(`sard_uploads/${publicId}`);
+      }
+    }
+
+    return await this.prisma.user.update({
+      where: { id },
+      data: { ...updateMeDto, photo: photoUrl },
+      select: {
+        name: true,
+        photo: true,
+        gender: true,
+        birthday: true,
+        phone: true,
+      },
     });
   }
 
