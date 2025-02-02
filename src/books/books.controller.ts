@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -6,12 +6,14 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { PlayService } from '../common/services/play.service';
-import { Response } from 'express';
+import { AudioService } from 'src/common/services/text-to-speech.service';
 
 @Controller('books')
 export class BooksController {
-  constructor(private readonly booksService: BooksService, private readonly playService: PlayService) { }
+  constructor(
+    private readonly booksService: BooksService,
+    private readonly textToSpeechService: AudioService,
+  ) { }
 
   @Post()
   @UseInterceptors(FileFieldsInterceptor([
@@ -88,21 +90,8 @@ export class BooksController {
   @Post('text-to-speech')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'user')
-  async convertTextToSpeech(
-    @Body() body: { text: string }
-  ) {
-    const audioUrl = await this.playService.getAudioUrl(body.text);
-    return { audioUrl };
-  }
-
-  @Post('stream-audio')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'user')
-  async streamAudio(
-    @Body() body: { text: string },
-    @Res() res: Response
-  ) {
-    const audioUrl = await this.playService.getAudioUrl(body.text);
-    return { audioUrl };
+  async convertTextToSpeech(@Body() body: { text: string }) {
+    const url = await this.textToSpeechService.generateAudioFromText(body.text);
+    return { url };
   }
 }

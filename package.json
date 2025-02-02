@@ -36,6 +36,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cloudinary": "^2.5.1",
+    "google-tts-api": "^2.0.2",
     "googleapis": "^144.0.0",
     "groq-sdk": "^0.7.0",
     "joi": "^17.13.3",
@@ -43,7 +44,6 @@
     "nodemailer": "^6.9.16",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
-    "playht": "^0.14.0",
     "pug": "^3.0.3",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
