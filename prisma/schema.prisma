@@ -66,6 +66,7 @@ model Book {
   updatedAt    DateTime       @default(now()) @updatedAt
   User         User?          @relation(fields: [userId], references: [id])
   userId       String?        @db.ObjectId
+  Order        Order[]
 }
 
 model Author {
@@ -119,7 +120,10 @@ model Order {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id])
-  price     Float
+  bookId    String   @db.ObjectId
+  book      Book     @relation(fields: [bookId], references: [id])
+  price     Float    @default(0)
+  points    Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
