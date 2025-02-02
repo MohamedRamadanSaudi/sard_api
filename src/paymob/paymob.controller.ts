@@ -1,17 +1,22 @@
-import { Controller, Post, Body, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Query, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Controller('paymob')
 export class PaymobController {
   constructor(private prisma: PrismaService) { }
 
-  @Post('webhook')
-  async handleWebhook(@Body() body: any) {
-    const { order, success } = body.obj;
+  @Get('webhook')
+  async handleWebhook(@Query() query: any) {
+    const { order, success } = query;
 
-    // Find the order by paymentId
+    // Ensure the 'order' and 'success' parameters exist
+    if (!order || !success) {
+      throw new NotFoundException('Invalid webhook data');
+    }
+
+    // Find the order by paymentId or any other relevant identifier (adjust if needed)
     const existingOrder = await this.prisma.order.findFirst({
-      where: { paymentId: order.id.toString() },
+      where: { paymentId: order.toString() },
     });
 
     if (!existingOrder) {
@@ -20,8 +25,8 @@ export class PaymobController {
 
     // Update the order status
     await this.prisma.order.update({
-      where: { id: existingOrder.id }, // Use `id` instead of `paymentId`
-      data: { status: success ? 'completed' : 'failed' },
+      where: { id: existingOrder.id },
+      data: { status: success === 'true' ? 'completed' : 'failed' }, // Convert 'true'/'false' to boolean
     });
 
     return { success: true };
