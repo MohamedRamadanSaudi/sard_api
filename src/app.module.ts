@@ -9,9 +9,13 @@ import { BooksModule } from './books/books.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AuthorsModule } from './authors/authors.module';
 import { FavoriteModule } from './favorite/favorite.module';
+import { OrdersModule } from './orders/orders.module';
+import { PaymobModule } from './paymob/paymob.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, AdminModule, BooksModule, CategoriesModule, AuthorsModule, FavoriteModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule, AuthModule, UsersModule, AdminModule, BooksModule, CategoriesModule, AuthorsModule, FavoriteModule, OrdersModule, PaymobModule],
   controllers: [AppController],
   providers: [AppService],
 })
