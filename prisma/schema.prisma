@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -101,7 +95,6 @@ model Review {
   userId        String   @db.ObjectId
   bookId        String   @db.ObjectId
   numberOfStars Int
-  review        String?
   user          User     @relation(fields: [userId], references: [id])
   book          Book     @relation(fields: [bookId], references: [id])
   createdAt     DateTime @default(now())
@@ -117,20 +110,26 @@ model Favorite {
 }
 
 model Order {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
-  bookId    String   @db.ObjectId
-  book      Book     @relation(fields: [bookId], references: [id])
-  price     Float    @default(0)
-  points    Int      @default(0)
-  status    String   @default("pending") // e.g., pending, completed, failed
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String      @db.ObjectId
+  user      User        @relation(fields: [userId], references: [id])
+  bookId    String      @db.ObjectId
+  book      Book        @relation(fields: [bookId], references: [id])
+  price     Float       @default(0)
+  points    Int         @default(0)
+  status    OrderStatus @default(pending) // e.g., pending, completed, failed
   paymentId String? // PayMob payment ID
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
 }
 
 enum GenderType {
   male
   female
+}
+
+enum OrderStatus {
+  pending
+  completed
+  failed
 }
