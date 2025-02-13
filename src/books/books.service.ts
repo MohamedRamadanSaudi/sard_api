@@ -68,17 +68,87 @@ export class BooksService {
     });
   }
 
-  async findAll() {
-    return this.prisma.book.findMany({
-      include: {
-        Author: true,
-        BookCategory: {
-          include: {
-            category: true,
+  async findAll(categoryId?: string, search?: string) {
+    return await this.prisma.book.findMany({
+      where: {
+        AND: [
+          categoryId
+            ? {
+              BookCategory: {
+                some: {
+                  categoryId: categoryId, // Filter by category
+                },
+              },
+            }
+            : {}, // If no categoryId is provided, ignore this filter
+          search
+            ? {
+              title: {
+                contains: search, // Search by book title
+                mode: 'insensitive', // Case-insensitive search
+              },
+            }
+            : {}, // If no search term is provided, ignore this filter
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        price_points: true,
+        is_free: true,
+        cover: true,
+        Author: {
+          select: {
+            name: true,
           },
         },
       },
     });
+  }
+
+  async findAllBooksWithPoints() {
+    const books = await this.prisma.book.findMany({
+      where: {
+        price_points: { not: null }
+      },
+      select: {
+        id: true,
+        title: true,
+        price_points: true,
+        cover: true,
+        Author: {
+          select: {
+            name: true,
+          }
+        }
+      }
+    })
+    return books;
+  }
+
+  async getRecommendationsBooks() {
+    // get random books with rating > 4 and with price (not free and not price_points)
+    const books = await this.prisma.book.findMany({
+      where: {
+        rating: { gte: 4 },
+        price: { not: null }
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        cover: true,
+        Author: {
+          select: {
+            name: true,
+          }
+        }
+      }
+    });
+    return books;
   }
 
   async findOne(id: string) {
