@@ -27,7 +27,13 @@ export class CategoriesService {
   }
 
   findAll() {
-    return this.prisma.category.findMany();
+    return this.prisma.category.findMany({
+      select: {
+        id: true,
+        name: true,
+        photo: true
+      }
+    });
   }
 
   findOne(id: string) {

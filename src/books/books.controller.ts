@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles, Query } from '@nestjs/common';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -34,8 +34,25 @@ export class BooksController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'user')
-  findAll() {
-    return this.booksService.findAll();
+  findAll(
+    @Query('category_id') category_id: string,
+    @Query('search') search: string,
+  ) {
+    return this.booksService.findAll(category_id, search);
+  }
+
+  @Get('points')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'user')
+  findAllBooksWithPoints() {
+    return this.booksService.findAllBooksWithPoints();
+  }
+
+  @Get('recommendations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'user')
+  getRecommendationsBooks() {
+    return this.booksService.getRecommendationsBooks();
   }
 
   @Get(':id')

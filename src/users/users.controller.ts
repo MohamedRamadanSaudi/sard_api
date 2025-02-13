@@ -34,6 +34,13 @@ export class UsersController {
     return this.usersService.getUser(req.user.userId);
   }
 
+  @Get('me/home')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'user')
+  getMeHome(@Req() req) {
+    return this.usersService.getUserHomeData(req.user.userId);
+  }
+
   @Patch("me")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'user')
