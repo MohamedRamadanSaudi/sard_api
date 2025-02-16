@@ -154,6 +154,40 @@ export class BooksService {
   async findOne(id: string) {
     const book = await this.prisma.book.findFirst({
       where: { id },
+      select: {
+        id: true,
+        cover: true,
+        price_points: true,
+        price: true,
+        is_free: true,
+        title: true,
+        description: true,
+        rating: true,
+        Author: {
+          select: {
+            name: true,
+            photo: true,
+          }
+        },
+        BookCategory: {
+          include: {
+            category: true,
+          },
+        },
+        reviews: true,
+      },
+    });
+
+    if (!book) {
+      throw new NotFoundException(`Book with ID ${id} not found`);
+    }
+
+    return book;
+  }
+
+  async findOneForUpdateOrDelete(id: string) {
+    const book = await this.prisma.book.findFirst({
+      where: { id },
       include: {
         Author: true,
         BookCategory: {
@@ -178,7 +212,7 @@ export class BooksService {
     cover?: Express.Multer.File,
     audio?: Express.Multer.File,
   ) {
-    const book = await this.findOne(id);
+    const book = await this.findOneForUpdateOrDelete(id)
 
     let coverUrl = '';
     let audioUrl = '';
@@ -243,7 +277,7 @@ export class BooksService {
   }
 
   async remove(id: string) {
-    const book = await this.findOne(id);
+    const book = await this.findOneForUpdateOrDelete(id);
 
     // Delete cover from Cloudinary if exists
     if (book.cover) {
