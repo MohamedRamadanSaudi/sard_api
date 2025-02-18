@@ -170,11 +170,22 @@ export class BooksService {
           }
         },
         BookCategory: {
-          include: {
-            category: true,
+          select: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                photo: true
+              }
+            },
           },
         },
-        reviews: true,
+        // return reviews length
+        _count: {
+          select: {
+            reviews: true
+          }
+        },
       },
     });
 
