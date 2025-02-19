@@ -1,20 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { PaymobService } from 'src/paymob/paymob.service';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private paymobService: PaymobService,
-    private configService: ConfigService,
   ) { }
 
   async create(userId: string, createOrderDto: CreateOrderDto) {
-    const { bookId, price, points } = createOrderDto;
+    const { bookId } = createOrderDto;
 
     // Check if the book exists
     const book = await this.prisma.book.findUnique({ where: { id: bookId } });
@@ -22,39 +20,122 @@ export class OrdersService {
       throw new NotFoundException('Book not found');
     }
 
-    // Create PayMob order
-    const orderId = await this.paymobService.createPaymentOrder(price);
-
-    // Define billing data (adjust as needed)
-    const billingData = {
-      first_name: "Test",
-      last_name: "User",
-      email: "test@example.com",
-      phone_number: "01012345678",
-      country: "EG",
-      city: "Cairo",
-      street: "123 Street",
-    };
-
-    // Generate Payment Key
-    const paymentKey = await this.paymobService.generatePaymentKey(orderId, price, billingData);
-
-    // Construct PayMob Payment URL
-    const iframeId = process.env.PAYMOB_IFRAME_ID;
-    const paymobUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${paymentKey}`;
-
-    // Create the order in the database
-    const order = await this.prisma.order.create({
-      data: {
-        userId,
-        bookId,
-        price,
-        points,
-        paymentId: orderId.toString(),
-      },
+    // Check if the user already owns the book
+    const alreadyOwned = await this.prisma.order.findFirst({
+      where: {
+        bookId: bookId,
+        userId: userId,
+        status: 'completed',
+      }
     });
+    if (alreadyOwned) {
+      throw new BadRequestException('You already own this book');
+    }
 
-    return { order, paymentUrl: paymobUrl };
+    // Start transaction
+    return this.prisma.$transaction(async (prisma) => {
+      // If the book is free
+      if (book.is_free) {
+        // Create the order
+        const order = await prisma.order.create({
+          data: {
+            userId,
+            bookId,
+            price: 0,
+            points: 0,
+            status: 'completed',
+          },
+        });
+
+        // Add the book to user's myBooks
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            myBooks: {
+              connect: { id: bookId },
+            },
+          },
+        });
+
+        return { order, paymentUrl: null };
+      }
+
+      // If the book is by points
+      if (book.price_points) {
+        // Get user details to check points
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+
+        // Check if the user has enough points
+        if (user.points < book.price_points) {
+          throw new BadRequestException('Not enough points');
+        }
+
+        // Deduct points from user
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            points: user.points - book.price_points,
+            myBooks: {
+              connect: { id: bookId },
+            },
+          },
+        });
+
+        // Create the order
+        const order = await prisma.order.create({
+          data: {
+            userId,
+            bookId,
+            price: 0,
+            points: book.price_points,
+            status: 'completed',
+          },
+        });
+
+        return { order, paymentUrl: null };
+      }
+
+      // If the book requires payment
+      if (book.price) {
+        // Create PayMob order
+        const orderId = await this.paymobService.createPaymentOrder(book.price);
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        // Define billing data
+        const billingData = {
+          first_name: user.name,
+          last_name: "",
+          email: user.email,
+          phone_number: user.phone,
+        };
+
+        // Generate Payment Key
+        const paymentKey = await this.paymobService.generatePaymentKey(
+          orderId,
+          book.price,
+          billingData
+        );
+
+        // Construct PayMob Payment URL
+        const iframeId = process.env.PAYMOB_IFRAME_ID;
+        const paymobUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${paymentKey}`;
+
+        // Create the order in the database
+        const order = await prisma.order.create({
+          data: {
+            userId,
+            bookId,
+            price: book.price,
+            points: 0,
+            paymentId: orderId.toString(),
+            status: 'pending',
+          },
+        });
+
+        return { order, paymentUrl: paymobUrl };
+      }
+
+      throw new BadRequestException('Invalid book pricing configuration');
+    });
   }
 
   async findAll(userId: string) {
