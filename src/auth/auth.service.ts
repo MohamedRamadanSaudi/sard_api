@@ -135,11 +135,11 @@ export class AuthService {
     }
   }
 
-  async changePassword(changePasswordDto: ChangePasswordDto) {
+  async changePassword(userId, changePasswordDto: ChangePasswordDto) {
     try {
       // Find user and ensure they exist
       const user = await this.prisma.user.findUnique({
-        where: { email: changePasswordDto.email.toLowerCase() },
+        where: { id: userId },
         select: {
           id: true,
           password: true,
