@@ -94,6 +94,15 @@ export class UsersService {
   async getUser(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        photo: true,
+        gender: true,
+        birthday: true,
+        phone: true,
+      }
     });
     if (!user) {
       throw new BadRequestException('User not found');

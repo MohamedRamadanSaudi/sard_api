@@ -2,7 +2,6 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import { Logger } from '@nestjs/common';
 import { ChangePasswordDto, CreateOtpDto, ResetOtpDto, ResetPasswordDto } from './dto/createOtp.dto';
 import { MailsService } from 'src/mails/mails.service';
 import { RegisterUserDto } from './dto/register.dto';
@@ -19,7 +18,6 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailsService,
     private verificationCodeGenerator: VerificationCodeGenerator,
-    private logger: Logger,
   ) { }
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -33,7 +31,6 @@ export class AuthService {
 
   async login(user: any) {
     const payload = { email: user.email, sub: user.id, role: "user" };
-    this.logger.log(`User: ${user.email} logged in`);
     return {
       token: this.jwtService.sign(payload),
     };
@@ -138,11 +135,11 @@ export class AuthService {
     }
   }
 
-  async changePassword(changePasswordDto: ChangePasswordDto) {
+  async changePassword(userId, changePasswordDto: ChangePasswordDto) {
     try {
       // Find user and ensure they exist
       const user = await this.prisma.user.findUnique({
-        where: { email: changePasswordDto.email.toLowerCase() },
+        where: { id: userId },
         select: {
           id: true,
           password: true,
@@ -193,7 +190,6 @@ export class AuthService {
         throw error;
       }
 
-      this.logger.error('Password reset failed', error);
       throw new HttpException(
         'Failed to reset password',
         HttpStatus.INTERNAL_SERVER_ERROR

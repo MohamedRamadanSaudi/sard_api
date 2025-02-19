@@ -4,14 +4,14 @@ import {
   Post,
   Body,
   Param,
-  Patch,
-  Delete,
+  // Patch,
+  // Delete,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+// import { UpdateOrderDto } from './dto/update-order.dto';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
@@ -30,30 +30,42 @@ export class OrdersController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('user')
+  @Roles('admin', 'user')
   findAll(@Req() req) {
-    const userId = req.user.userId;
-    return this.ordersService.findAll(userId);
+    // if the user is an admin, return all orders and if the user is a user, return only their orders
+    if (req.user.role === 'admin') {
+      return this.ordersService.findAll();
+    } else {
+      const userId = req.user.userId;
+      return this.ordersService.findMyOrders(userId);
+    }
   }
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('user')
+  @Roles('admin', 'user')
   findOne(@Param('id') id: string) {
     return this.ordersService.findOne(id);
   }
 
-  @Patch(':id')
+  @Get(':id/book')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.ordersService.update(id, updateOrderDto);
+  @Roles('user')
+  findMyBook(@Param('id') id: string) {
+    return this.ordersService.findMyBook(id);
   }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  remove(@Param('id') id: string) {
-    return this.ordersService.remove(id);
-  }
+  // @Patch(':id')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('admin')
+  // update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
+  //   return this.ordersService.update(id, updateOrderDto);
+  // }
+
+  // @Delete(':id')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles('admin')
+  // remove(@Param('id') id: string) {
+  //   return this.ordersService.remove(id);
+  // }
 }

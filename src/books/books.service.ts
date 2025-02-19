@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -67,6 +67,52 @@ export class BooksService {
       },
     });
   }
+
+  async addReview(bookId: string, numberOfStars: number, userId: string) {
+    // Check if the user owns the book or has a completed order
+    const userHasBook = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        myBooks: {
+          some: { id: bookId }, // Check if the book exists in user's myBooks
+        },
+      },
+    });
+
+    const userHasCompletedOrder = await this.prisma.order.findFirst({
+      where: {
+        userId,
+        bookId,
+        status: 'completed', // Ensure order is completed
+      },
+    });
+
+    if (!userHasBook && !userHasCompletedOrder) {
+      throw new ForbiddenException('You can only review books you own.');
+    }
+
+    // Check if the user has already reviewed this book
+    const existingReview = await this.prisma.review.findFirst({
+      where: {
+        userId,
+        bookId,
+      },
+    });
+
+    if (existingReview) {
+      throw new BadRequestException('You have already reviewed this book.');
+    }
+
+    // Create a new review
+    return await this.prisma.review.create({
+      data: {
+        userId,
+        bookId,
+        numberOfStars,
+      },
+    });
+  }
+
 
   async findAll(categoryId?: string, search?: string) {
     return await this.prisma.book.findMany({
@@ -154,6 +200,72 @@ export class BooksService {
   async findOne(id: string) {
     const book = await this.prisma.book.findFirst({
       where: { id },
+      select: {
+        id: true,
+        cover: true,
+        price_points: true,
+        price: true,
+        is_free: true,
+        title: true,
+        description: true,
+        Author: {
+          select: {
+            name: true,
+            photo: true,
+          }
+        },
+        BookCategory: {
+          select: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                photo: true
+              }
+            },
+          },
+        },
+        // return reviews length
+        _count: {
+          select: {
+            reviews: true
+          }
+        },
+      },
+    });
+
+    if (!book) {
+      throw new NotFoundException(`Book with ID ${id} not found`);
+    }
+
+    // get reviews average
+    const reviews = await this.prisma.review.findMany({
+      where: { bookId: id },
+      select: {
+        numberOfStars: true
+      }
+    });
+    const reviewsCount = reviews.length;
+    const reviewsSum = reviews.reduce((acc, curr) => acc + curr.numberOfStars, 0);
+    const reviewsAverage = reviewsCount > 0 ? reviewsSum / reviewsCount : 0;
+
+    // update book object with rating every time it's fetched " just for now :) ", because recommended books are fetched based on rating
+    await this.prisma.book.update({
+      where: { id },
+      data: {
+        rating: reviewsAverage
+      }
+    })
+
+    return {
+      ...book,
+      rating: reviewsAverage
+    };
+  }
+
+  async findOneForUpdateOrDelete(id: string) {
+    const book = await this.prisma.book.findFirst({
+      where: { id },
       include: {
         Author: true,
         BookCategory: {
@@ -178,7 +290,7 @@ export class BooksService {
     cover?: Express.Multer.File,
     audio?: Express.Multer.File,
   ) {
-    const book = await this.findOne(id);
+    const book = await this.findOneForUpdateOrDelete(id)
 
     let coverUrl = '';
     let audioUrl = '';
@@ -243,7 +355,7 @@ export class BooksService {
   }
 
   async remove(id: string) {
-    const book = await this.findOne(id);
+    const book = await this.findOneForUpdateOrDelete(id);
 
     // Delete cover from Cloudinary if exists
     if (book.cover) {

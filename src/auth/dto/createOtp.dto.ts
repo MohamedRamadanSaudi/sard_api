@@ -16,10 +16,6 @@ export class ResetOtpDto {
 }
 
 export class ChangePasswordDto {
-    @IsEmail()
-    @IsLowercase()
-    email: string;
-
     @IsString()
     old_password: string;
 

@@ -1,4 +1,4 @@
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
@@ -19,7 +19,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
       signOptions: { expiresIn: '90d' },
     }),
   ],
-  providers: [AuthService, JwtStrategy, Logger, MailsService, VerificationCodeGenerator],
+  providers: [AuthService, JwtStrategy, MailsService, VerificationCodeGenerator],
   exports: [AuthService, JwtModule],
   controllers: [AuthController],
 })

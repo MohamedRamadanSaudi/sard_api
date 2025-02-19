@@ -1,8 +1,11 @@
-import { Controller, Post, Body, UnauthorizedException, ValidationPipe, Patch } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException, ValidationPipe, Patch, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register.dto';
 import { LoginUserDto } from './dto/login.dto';
 import { ChangePasswordDto, CreateOtpDto, ResetOtpDto, ResetPasswordDto } from './dto/createOtp.dto';
+import { Roles } from './decorators/roles.decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -47,9 +50,15 @@ export class AuthController {
     return this.authService.verifyEmailOtp(resetData)
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user')
   @Patch('change-password')
-  changePassword(@Body(ValidationPipe) changePasswordDto: ChangePasswordDto) {
-    return this.authService.changePassword(changePasswordDto)
+  changePassword(
+    @Body(ValidationPipe) changePasswordDto: ChangePasswordDto,
+    @Req() req: any
+  ) {
+    const userId = req.user.userId
+    return this.authService.changePassword(userId, changePasswordDto)
   }
 
   @Patch('reset-password')

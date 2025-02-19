@@ -25,13 +25,15 @@ export class FavoriteService {
     }
 
     // Create the favorite
-    return this.prisma.favorite.create({
+    await this.prisma.favorite.create({
       data: {
         userId,
         bookId,
       },
       include: { book: true }, // Include book details in the response
     });
+
+    return { message: 'Book added to favorites' };
   }
 
   async remove(userId: string, bookId: string) {
@@ -48,18 +50,35 @@ export class FavoriteService {
     }
 
     // Delete the favorite
-    return this.prisma.favorite.delete({
+    await this.prisma.favorite.delete({
       where: {
         id: favorite.id,
       }
     });
+
+    return { message: 'Favorite removed' };
   }
 
   async list(userId: string) {
     // Fetch all favorites for the user
     return this.prisma.favorite.findMany({
       where: { userId },
-      include: { book: true }, // Include book details in the response
+      select: {
+        id: true,
+        book: {
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            cover: true,
+            Author: {
+              select: {
+                name: true,
+              }
+            }
+          }
+        }
+      },
     });
   }
 }
