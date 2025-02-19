@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFiles, Query, Req } from '@nestjs/common';
 import { BooksService } from './books.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -53,6 +53,18 @@ export class BooksController {
   @Roles('admin', 'user')
   getRecommendationsBooks() {
     return this.booksService.getRecommendationsBooks();
+  }
+
+  @Post(':id/review')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user')
+  async addReview(
+    @Param('id') bookId: string,
+    @Body('numberOfStars') numberOfStars: number,
+    @Req() req
+  ) {
+    const userId = req.user.userId; // Extract user ID from JWT
+    return await this.booksService.addReview(bookId, numberOfStars, userId);
   }
 
   @Get(':id')

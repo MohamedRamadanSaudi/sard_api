@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
@@ -67,6 +67,52 @@ export class BooksService {
       },
     });
   }
+
+  async addReview(bookId: string, numberOfStars: number, userId: string) {
+    // Check if the user owns the book or has a completed order
+    const userHasBook = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        myBooks: {
+          some: { id: bookId }, // Check if the book exists in user's myBooks
+        },
+      },
+    });
+
+    const userHasCompletedOrder = await this.prisma.order.findFirst({
+      where: {
+        userId,
+        bookId,
+        status: 'completed', // Ensure order is completed
+      },
+    });
+
+    if (!userHasBook && !userHasCompletedOrder) {
+      throw new ForbiddenException('You can only review books you own.');
+    }
+
+    // Check if the user has already reviewed this book
+    const existingReview = await this.prisma.review.findFirst({
+      where: {
+        userId,
+        bookId,
+      },
+    });
+
+    if (existingReview) {
+      throw new BadRequestException('You have already reviewed this book.');
+    }
+
+    // Create a new review
+    return await this.prisma.review.create({
+      data: {
+        userId,
+        bookId,
+        numberOfStars,
+      },
+    });
+  }
+
 
   async findAll(categoryId?: string, search?: string) {
     return await this.prisma.book.findMany({
@@ -162,7 +208,6 @@ export class BooksService {
         is_free: true,
         title: true,
         description: true,
-        rating: true,
         Author: {
           select: {
             name: true,
@@ -193,7 +238,21 @@ export class BooksService {
       throw new NotFoundException(`Book with ID ${id} not found`);
     }
 
-    return book;
+    // get reviews average
+    const reviews = await this.prisma.review.findMany({
+      where: { bookId: id },
+      select: {
+        numberOfStars: true
+      }
+    });
+    const reviewsCount = reviews.length;
+    const reviewsSum = reviews.reduce((acc, curr) => acc + curr.numberOfStars, 0);
+    const reviewsAverage = reviewsCount > 0 ? reviewsSum / reviewsCount : 0;
+
+    return {
+      ...book,
+      rating: reviewsAverage
+    };
   }
 
   async findOneForUpdateOrDelete(id: string) {

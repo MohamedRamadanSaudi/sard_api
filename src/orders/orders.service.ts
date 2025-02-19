@@ -148,6 +148,7 @@ export class OrdersService {
         id: true,
         book: {
           select: {
+            id: true,
             title: true,
             description: true,
             cover: true,
