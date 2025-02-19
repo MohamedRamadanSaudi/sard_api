@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+// import { UpdateOrderDto } from './dto/update-order.dto';
 import { PaymobService } from 'src/paymob/paymob.service';
 
 @Injectable()
@@ -138,9 +138,75 @@ export class OrdersService {
     });
   }
 
-  async findAll(userId: string) {
+  async findMyOrders(userId: string) {
     return this.prisma.order.findMany({
-      where: { userId },
+      where: {
+        userId,
+        status: 'completed',
+      },
+      select: {
+        id: true,
+        book: {
+          select: {
+            title: true,
+            description: true,
+            cover: true,
+            Author: {
+              select: {
+                name: true,
+              }
+            }
+          }
+        }
+      },
+    });
+  }
+
+  async findMyBook(id: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      select: {
+        book: {
+          select: {
+            title: true,
+            description: true,
+            cover: true,
+            duration: true,
+            audio: true,
+            Author: {
+              select: {
+                name: true,
+                photo: true,
+              }
+            },
+            BookCategory: {
+              select: {
+                category: {
+                  select: {
+                    name: true,
+                    photo: true,
+                  }
+                },
+              }
+            },
+            rating: true,
+            _count: {
+              select: {
+                reviews: true,
+              }
+            }
+          }
+        }
+      },
+    });
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+    return order;
+  }
+
+  async findAll() {
+    return this.prisma.order.findMany({
       include: { book: true },
     });
   }
@@ -156,14 +222,14 @@ export class OrdersService {
     return order;
   }
 
-  async update(id: string, updateOrderDto: UpdateOrderDto) {
-    return this.prisma.order.update({
-      where: { id },
-      data: updateOrderDto,
-    });
-  }
+  // async update(id: string, updateOrderDto: UpdateOrderDto) {
+  //   return this.prisma.order.update({
+  //     where: { id },
+  //     data: updateOrderDto,
+  //   });
+  // }
 
-  async remove(id: string) {
-    return this.prisma.order.delete({ where: { id } });
-  }
+  // async remove(id: string) {
+  //   return this.prisma.order.delete({ where: { id } });
+  // }
 }
