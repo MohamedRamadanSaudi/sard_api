@@ -249,6 +249,14 @@ export class BooksService {
     const reviewsSum = reviews.reduce((acc, curr) => acc + curr.numberOfStars, 0);
     const reviewsAverage = reviewsCount > 0 ? reviewsSum / reviewsCount : 0;
 
+    // update book object with rating every time it's fetched " just for now :) ", because recommended books are fetched based on rating
+    await this.prisma.book.update({
+      where: { id },
+      data: {
+        rating: reviewsAverage
+      }
+    })
+
     return {
       ...book,
       rating: reviewsAverage
