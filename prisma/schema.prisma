@@ -74,7 +74,7 @@ model Author {
 
 model Category {
   id           String         @id @default(auto()) @map("_id") @db.ObjectId
-  name         String
+  name         String         @unique
   photo        String?
   BookCategory BookCategory[]
   createdAt    DateTime       @default(now())
