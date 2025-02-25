@@ -65,7 +65,7 @@ model Book {
 
 model Author {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
+  name      String   @unique
   photo     String?
   books     Book[]
   createdAt DateTime @default(now())
