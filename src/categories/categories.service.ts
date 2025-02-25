@@ -13,6 +13,14 @@ export class CategoriesService {
   ) { }
 
   async create(createCategoryDto: CreateCategoryDto, photo?: Express.Multer.File) {
+    // check if category already exists
+    const categoryExists = await this.prisma.category.findFirst({
+      where: { name: createCategoryDto.name },
+    });
+    if (categoryExists) {
+      throw new NotFoundException('Category already exists');
+    }
+
     let photoUrl = '';
     if (photo) {
       photoUrl = await this.cloudinaryService.uploadImage(photo);
@@ -36,8 +44,12 @@ export class CategoriesService {
     });
   }
 
-  findOne(id: string) {
-    return this.prisma.category.findUnique({ where: { id } });
+  async findOne(id: string) {
+    const category = await this.prisma.category.findUnique({ where: { id } });
+    if (!category) {
+      throw new NotFoundException('Category not found');
+    }
+    return category;
   }
 
   async update(id: string, updateCategoryDto: UpdateCategoryDto, photo?: Express.Multer.File) {

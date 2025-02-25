@@ -31,7 +31,11 @@ export class UsersService {
   }
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return null;
+    }
+    return user;
   }
 
   async getUsers() {
@@ -111,7 +115,7 @@ export class UsersService {
   }
 
   async getUserHomeData(id: string) {
-    return await this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
         name: true,
@@ -120,6 +124,10 @@ export class UsersService {
         points: true,
       },
     });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
   }
 
   async updateUser(id: string, updateUserDto: UpdateUserDto) {

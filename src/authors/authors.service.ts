@@ -12,6 +12,16 @@ export class AuthorsService {
   ) { }
 
   async create(createAuthorDto: CreateAuthorDto, photo?: Express.Multer.File) {
+    // check if author already exists
+    const authorExists = await this.prisma.author.findFirst({
+      where: {
+        name: createAuthorDto.name,
+      },
+    });
+    if (authorExists) {
+      throw new NotFoundException('Author already exists');
+    }
+
     let photoUrl = '';
     if (photo) {
       photoUrl = await this.cloudinaryService.uploadImage(photo);
@@ -29,8 +39,12 @@ export class AuthorsService {
     return this.prisma.author.findMany();
   }
 
-  findOne(id: string) {
-    return this.prisma.author.findUnique({ where: { id } });
+  async findOne(id: string) {
+    const author = await this.prisma.author.findUnique({ where: { id } });
+    if (!author) {
+      throw new NotFoundException('Author not found');
+    }
+    return author;
   }
 
   async update(id: string, updateAuthorDto: UpdateAuthorDto, photo?: Express.Multer.File) {
