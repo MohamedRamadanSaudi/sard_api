@@ -114,8 +114,8 @@ export class BooksService {
   }
 
 
-  async findAll(categoryId?: string, search?: string) {
-    return await this.prisma.book.findMany({
+  async findAll(userId: string, categoryId?: string, search?: string) {
+    const books = await this.prisma.book.findMany({
       where: {
         AND: [
           categoryId
@@ -152,9 +152,54 @@ export class BooksService {
         },
       },
     });
+
+    // get user favorite books and modify the response to include is_favorite field and set it to true if the book is in the user favorite books
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        favorites: {
+          select: {
+            bookId: true
+          }
+        }
+      }
+    });
+
+
+    return {
+      books: books.map(book => {
+        const isFavorite = user.favorites.some(fav => fav.bookId === book.id);
+        return {
+          ...book,
+          is_favorite: isFavorite
+        }
+      })
+    }
   }
 
-  async findAllBooksWithPoints() {
+  async findAllForAdmin() {
+    return await this.prisma.book.findMany({
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        price_points: true,
+        is_free: true,
+        cover: true,
+        Author: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async findAllBooksWithPoints(userId: string) {
     const books = await this.prisma.book.findMany({
       where: {
         price_points: { not: null }
@@ -171,10 +216,31 @@ export class BooksService {
         }
       }
     })
-    return books;
+    // get user favorite books and modify the response to include is_favorite field and set it to true if the book is in the user favorite books
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        favorites: {
+          select: {
+            bookId: true
+          }
+        }
+      }
+    });
+
+
+    return {
+      books: books.map(book => {
+        const isFavorite = user.favorites.some(fav => fav.bookId === book.id);
+        return {
+          ...book,
+          is_favorite: isFavorite
+        }
+      })
+    }
   }
 
-  async getRecommendationsBooks() {
+  async getRecommendationsBooks(userId: string) {
     // get random books with rating > 4 and with price (not free and not price_points)
     const books = await this.prisma.book.findMany({
       where: {
@@ -194,7 +260,29 @@ export class BooksService {
         }
       }
     });
-    return books;
+
+    // get user favorite books and modify the response to include is_favorite field and set it to true if the book is in the user favorite books
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        favorites: {
+          select: {
+            bookId: true
+          }
+        }
+      }
+    });
+
+
+    return {
+      books: books.map(book => {
+        const isFavorite = user.favorites.some(fav => fav.bookId === book.id);
+        return {
+          ...book,
+          is_favorite: isFavorite
+        }
+      })
+    }
   }
 
   async findOne(id: string) {

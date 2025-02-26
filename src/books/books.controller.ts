@@ -35,24 +35,40 @@ export class BooksController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'user')
   findAll(
+    @Req() req,
     @Query('category_id') category_id: string,
     @Query('search') search: string,
   ) {
-    return this.booksService.findAll(category_id, search);
+    const userId = req.user.userId; // Extract user ID from JWT
+    return this.booksService.findAll(userId, category_id, search);
   }
+
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  findAllForAdmin() {
+    return this.booksService.findAllForAdmin();
+  }
+
 
   @Get('points')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'user')
-  findAllBooksWithPoints() {
-    return this.booksService.findAllBooksWithPoints();
+  findAllBooksWithPoints(
+    @Req() req
+  ) {
+    const userId = req.user.userId; // Extract user ID from JWT
+    return this.booksService.findAllBooksWithPoints(userId);
   }
 
   @Get('recommendations')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'user')
-  getRecommendationsBooks() {
-    return this.booksService.getRecommendationsBooks();
+  getRecommendationsBooks(
+    @Req() req
+  ) {
+    const userId = req.user.userId; // Extract user ID from JWT
+    return this.booksService.getRecommendationsBooks(userId);
   }
 
   @Post(':id/review')
