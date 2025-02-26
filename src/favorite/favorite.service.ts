@@ -61,10 +61,9 @@ export class FavoriteService {
 
   async list(userId: string) {
     // Fetch all favorites for the user
-    return this.prisma.favorite.findMany({
+    const favorites = await this.prisma.favorite.findMany({
       where: { userId },
       select: {
-        id: true,
         book: {
           select: {
             id: true,
@@ -80,5 +79,30 @@ export class FavoriteService {
         }
       },
     });
+    // get user favorite books and modify the response to include is_favorite field and set it to true if the book is in the user favorite books
+    const user = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        favorites: {
+          select: {
+            bookId: true
+          }
+        }
+      }
+    });
+
+
+    return {
+      favorites: favorites.map(favorite => {
+        const isFavorite = user.favorites.some(fav => fav.bookId === favorite.book.id);
+        return {
+          book: {
+            ...favorite.book,
+            is_favorite: isFavorite
+          },
+        }
+      })
+
+    }
   }
 }

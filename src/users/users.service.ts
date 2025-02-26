@@ -40,7 +40,15 @@ export class UsersService {
 
   async getUsers() {
     // ignore the password
-    return this.prisma.user.findMany({ select: { id: true, email: true, phone: true, name: true } });
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true,
+        isVerified: true,
+      }
+    });
   }
 
 
