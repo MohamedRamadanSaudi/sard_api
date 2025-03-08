@@ -115,6 +115,18 @@ export class BooksService {
 
 
   async findAll(userId: string, categoryId?: string, search?: string) {
+    // Fetch user favorite book IDs first
+    const userFavorites = await this.prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        favorites: {
+          select: { bookId: true }
+        }
+      }
+    });
+
+    const favoriteBookIds = new Set(userFavorites?.favorites.map(fav => fav.bookId) || []);
+
     const books = await this.prisma.book.findMany({
       where: {
         AND: [
@@ -153,28 +165,12 @@ export class BooksService {
       },
     });
 
-    // get user favorite books and modify the response to include is_favorite field and set it to true if the book is in the user favorite books
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId },
-      select: {
-        favorites: {
-          select: {
-            bookId: true
-          }
-        }
-      }
-    });
-
-
     return {
-      books: books.map(book => {
-        const isFavorite = user.favorites.some(fav => fav.bookId === book.id);
-        return {
-          ...book,
-          is_favorite: isFavorite
-        }
-      })
-    }
+      books: books.map(book => ({
+        ...book,
+        is_favorite: favoriteBookIds.has(book.id)
+      }))
+    };
   }
 
   async findAllForAdmin() {
