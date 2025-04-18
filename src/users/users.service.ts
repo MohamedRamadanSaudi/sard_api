@@ -182,6 +182,27 @@ export class UsersService {
     });
   }
 
+  async deleteUser(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Delete user's photo from Cloudinary if it exists
+    if (user.photo) {
+      const urlParts = user.photo.split('/');
+      const publicIdWithExtension = urlParts[urlParts.length - 1];
+      const publicId = parse(publicIdWithExtension).name;
+
+      await this.cloudinaryService.deleteImage(`sard_uploads/${publicId}`);
+    }
+
+    // Delete the user
+    await this.prisma.user.delete({ where: { id } });
+
+    return { message: 'User deleted successfully' };
+  }
+
   // Helper function to check if two dates are consecutive days
   private isConsecutiveDay(previousDate: Date, currentDate: Date): boolean {
     const previousDay = new Date(previousDate);
