@@ -5,7 +5,7 @@ export default class VerificationCodeGenerator {
   private readonly codeLength: number;
   private readonly hashAlgorithm: string;
 
-  constructor(codeLength: number = 6, hashAlgorithm: string = 'sha256') {
+  constructor(codeLength: number = 4, hashAlgorithm: string = 'sha256') {
     this.codeLength = codeLength;
     this.hashAlgorithm = hashAlgorithm;
   }
