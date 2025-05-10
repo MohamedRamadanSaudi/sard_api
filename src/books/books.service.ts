@@ -39,33 +39,34 @@ export class BooksService {
       ? Array.isArray(categoryId)
         ? categoryId
         : [categoryId]
-      : undefined;
-
-    return this.prisma.book.create({
-      data: {
-        ...restBookData,
-        duration: parseInt(restBookData.duration as any) || 0,
-        price: restBookData.price ? parseFloat(restBookData.price as any) : undefined,
-        price_points: restBookData.price_points ? parseInt(restBookData.price_points as any) : undefined,
-        cover: coverUrl,
-        audio: audioUrl,
-        rating: 0,
-        authorId: authorId || undefined,
-        BookCategory: categoryIds ? {
-          create: categoryIds.map(catId => ({
-            categoryId: catId,
-          }))
-        } : undefined,
-      },
-      include: {
-        Author: true,
-        BookCategory: {
-          include: {
-            category: true,
+      : undefined; return this.prisma.book.create({
+        data: {
+          ...restBookData,
+          is_free: typeof restBookData.is_free === 'string'
+            ? restBookData.is_free === 'true'
+            : restBookData.is_free,
+          duration: parseInt(restBookData.duration as any) || 0,
+          price: restBookData.price ? parseFloat(restBookData.price as any) : undefined,
+          price_points: restBookData.price_points ? parseInt(restBookData.price_points as any) : undefined,
+          cover: coverUrl,
+          audio: audioUrl,
+          rating: 0,
+          authorId: authorId || undefined,
+          BookCategory: categoryIds ? {
+            create: categoryIds.map(catId => ({
+              categoryId: catId,
+            }))
+          } : undefined,
+        },
+        include: {
+          Author: true,
+          BookCategory: {
+            include: {
+              category: true,
+            },
           },
         },
-      },
-    });
+      });
   }
 
   async addReview(bookId: string, numberOfStars: number, userId: string) {

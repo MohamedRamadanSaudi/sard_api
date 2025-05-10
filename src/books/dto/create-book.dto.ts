@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateBookDto {
@@ -22,10 +23,14 @@ export class CreateBookDto {
 
   @IsOptional()
   price_points?: number;
-
-  @IsBoolean()
   @IsOptional()
-  is_free?: boolean = false;
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return value;
+  })
+  @IsBoolean()
+  is_free?: boolean;
 
   @IsString()
   @IsOptional()
