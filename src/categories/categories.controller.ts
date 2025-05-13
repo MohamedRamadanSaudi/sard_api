@@ -23,8 +23,6 @@ export class CategoriesController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'user')
   findAll() {
     return this.categoriesService.findAll();
   }

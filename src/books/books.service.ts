@@ -174,6 +174,48 @@ export class BooksService {
     };
   }
 
+  async findAllForLandingPage(categoryId?: string, search?: string) {
+    const books = await this.prisma.book.findMany({
+      where: {
+        AND: [
+          categoryId
+            ? {
+              BookCategory: {
+                some: {
+                  categoryId: categoryId, // Filter by category
+                },
+              },
+            }
+            : {}, // If no categoryId is provided, ignore this filter
+          search
+            ? {
+              title: {
+                contains: search, // Search by book title
+                mode: 'insensitive', // Case-insensitive search
+              },
+            }
+            : {}, // If no search term is provided, ignore this filter
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        price: true,
+        price_points: true,
+        is_free: true,
+        cover: true,
+        Author: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return books
+  }
+
   async findAllForAdmin() {
     return await this.prisma.book.findMany({
       select: {

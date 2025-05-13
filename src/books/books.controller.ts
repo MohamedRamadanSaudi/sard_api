@@ -43,6 +43,14 @@ export class BooksController {
     return this.booksService.findAll(userId, category_id, search);
   }
 
+  @Get('landing-page')
+  findAllForLandingPage(
+    @Query('category_id') category_id: string,
+    @Query('search') search: string,
+  ) {
+    return this.booksService.findAllForLandingPage(category_id, search);
+  }
+
   @Get('admin')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
