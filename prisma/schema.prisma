@@ -19,7 +19,6 @@ model User {
   passwordResetOtpExpiry DateTime?
   photo                  String?
   gender                 GenderType?
-  birthday               DateTime?
   phone                  String?
   points                 Int         @default(0)
   lastLoginDate          DateTime?

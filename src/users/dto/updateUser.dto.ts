@@ -23,9 +23,6 @@ export class UpdateMeDto {
   gender?: GenderType;
 
   @IsOptional()
-  birthday?: Date;
-
-  @IsOptional()
   @IsString()
   phone?: string;
 }

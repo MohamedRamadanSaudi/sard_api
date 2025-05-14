@@ -112,7 +112,6 @@ export class UsersService {
         email: true,
         photo: true,
         gender: true,
-        birthday: true,
         phone: true,
       }
     });
@@ -176,7 +175,6 @@ export class UsersService {
         name: true,
         photo: true,
         gender: true,
-        birthday: true,
         phone: true,
       },
     });
