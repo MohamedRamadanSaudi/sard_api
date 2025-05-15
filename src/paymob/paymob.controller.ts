@@ -7,28 +7,36 @@ export class PaymobController {
 
   @Get('webhook')
   async handleWebhook(@Query() query: any) {
-    const { order, success } = query;
 
-    // Ensure the 'order' and 'success' parameters exist
-    if (!order || !success) {
-      throw new NotFoundException('Invalid webhook data');
+    const { order, success, 'data.message': errorMessage, txn_response_code } = query;
+
+    // Ensure the 'order' parameter exists
+    if (!order) {
+      throw new NotFoundException('Invalid webhook data: Missing order ID');
     }
 
-    // Find the order by paymentId or any other relevant identifier (adjust if needed)
+    // Find the order by paymentId
     const existingOrder = await this.prisma.order.findFirst({
       where: { paymentId: order.toString() },
     });
 
     if (!existingOrder) {
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException(`Order not found for paymentId: ${order}`);
     }
 
-    // Update the order status
+    const paymentSuccess = success === 'true';
+
+    // Update the order with more detailed information
     await this.prisma.order.update({
       where: { id: existingOrder.id },
-      data: { status: success === 'true' ? 'completed' : 'failed' }, // Convert 'true'/'false' to boolean
+      data: {
+        status: paymentSuccess ? 'completed' : 'failed',
+      },
     });
 
-    return { success: true };
+    return {
+      status: paymentSuccess ? 'success' : 'failed',
+      message: paymentSuccess ? 'Payment completed' : `Payment failed: ${errorMessage || txn_response_code || 'Unknown error'}`,
+    };
   }
 }
