@@ -79,12 +79,13 @@ html(lang="ar", dir="rtl")
                 case status
                     when 'completed'
                         p.status.status-completed حالة الطلب: مكتمل
-                        p تم إضافة الكتاب إلى مكتبتك، يمكنك الآن الاستمتاع بقراءته عبر تطبيق سرد
+                        p تم إضافة الكتاب إلى مكتبتك، يمكنك الآن الاستمتاع بسماعه عبر تطبيق سرد
                     when 'failed'
                         p.status.status-failed حالة الطلب: فشل
-                        p للأسف، فشلت عملية الدفع. #{errorMessage}
+                        p للأسف، فشلت عملية الدفع
+                        p.status.status-failed #{errorMessage}
                         if retryPaymentUrl
-                            p يمكنك إعادة المحاولة من خلال الرابط التالي:
+                            p يمكنك إعادة المحاولة من خلال الرابط التالي
                             p 
                                 a(href=retryPaymentUrl) إعادة المحاولة
                     default

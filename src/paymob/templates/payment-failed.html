@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>فشل الدفع - سرد</title>
+  <style>
+    body {
+      font-family: 'Tajawal', Arial, sans-serif;
+      background-color: #f4f7fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+    }
+    .error-icon {
+      color: #f44336;
+      font-size: 60px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #f44336;
+      margin-bottom: 15px;
+    }
+    p {
+      color: #555;
+      font-size: 18px;
+      line-height: 1.6;
+      margin-bottom: 25px;
+    }
+    .error-message {
+      background-color: #fff8f8;
+      border: 1px solid #ffebee;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 25px;
+      color: #d32f2f;
+    }
+    .button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 30px;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin: 5px;
+      transition: background-color 0.3s;
+    }
+    .button-retry {
+      background-color: #2196F3;
+    }
+    .button-retry:hover {
+      background-color: #0b7dda;
+    }
+    .button-close {
+      background-color: #757575;
+    }
+    .button-close:hover {
+      background-color: #616161;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="error-icon">✗</div>
+    <h1>فشل عملية الدفع</h1>
+    <p>للأسف، لم تتم عملية الدفع بنجاح.</p>
+    <div class="error-message">
+      {{errorMessage}}
+    </div>
+    <div>
+      {{retryPaymentButton}}
+      <button onclick="window.close()" class="button button-close">إغلاق</button>
+    </div>
+  </div>
+</body>
+</html>
