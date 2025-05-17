@@ -182,9 +182,39 @@ export class UsersService {
   }
 
   async deleteUser(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.prisma.user.findUnique(
+      {
+        where: { id },
+        include: {
+          orders: true,
+          favorites: true,
+        }
+      }
+    );
+
     if (!user) {
       throw new BadRequestException('User not found');
+    }
+
+    // Check if the user has any completed orders
+    const hasCompletedOrders = user.orders.some(order => order.status === 'completed');
+
+    if (hasCompletedOrders) {
+      throw new BadRequestException('User has completed orders, cannot delete');
+    }
+
+    // If there are favorites, delete them
+    if (user.favorites.length > 0) {
+      await this.prisma.favorite.deleteMany({
+        where: { userId: id }
+      });
+    }
+
+    // Delete any pending orders
+    if (user.orders.length > 0) {
+      await this.prisma.order.deleteMany({
+        where: { userId: id }
+      });
     }
 
     // Delete user's photo from Cloudinary if it exists
