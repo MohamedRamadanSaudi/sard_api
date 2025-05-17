@@ -3,12 +3,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 // import { UpdateOrderDto } from './dto/update-order.dto';
 import { PaymobService } from 'src/paymob/paymob.service';
+import { MailsService } from 'src/mails/mails.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private paymobService: PaymobService,
+    private mailsService: MailsService,
   ) { }
 
   async create(userId: string, createOrderDto: CreateOrderDto) {
@@ -30,112 +32,28 @@ export class OrdersService {
     });
     if (alreadyOwned) {
       throw new BadRequestException('You already own this book');
-    }
+    }    // Define transaction options with increased timeout (15 seconds)
+    const transactionOptions = {
+      maxWait: 15000, // 15 seconds maximum wait time
+      timeout: 15000, // 15 seconds timeout
+    };
 
-    // Start transaction
-    return this.prisma.$transaction(async (prisma) => {
-      // If the book is free
+    // Start transaction with increased timeout
+    return this.prisma.$transaction(async (prisma) => {      // Process order based on book pricing type
       if (book.is_free) {
-        // Create the order
-        const order = await prisma.order.create({
-          data: {
-            userId,
-            bookId,
-            price: 0,
-            points: 0,
-            status: 'completed',
-          },
-        });
-
-        // Add the book to user's myBooks
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            myBooks: {
-              connect: { id: bookId },
-            },
-          },
-        });
-
-        return { order, paymentUrl: null };
+        return this.processFreeBookOrder(prisma, userId, bookId);
       }
 
-      // If the book is by points
       if (book.price_points) {
-        // Get user details to check points
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-
-        // Check if the user has enough points
-        if (user.points < book.price_points) {
-          throw new BadRequestException('Not enough points');
-        }
-
-        // Deduct points from user
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            points: user.points - book.price_points,
-            myBooks: {
-              connect: { id: bookId },
-            },
-          },
-        });
-
-        // Create the order
-        const order = await prisma.order.create({
-          data: {
-            userId,
-            bookId,
-            price: 0,
-            points: book.price_points,
-            status: 'completed',
-          },
-        });
-
-        return { order, paymentUrl: null };
+        return this.processPointsBookOrder(prisma, userId, bookId, book.price_points);
       }
 
-      // If the book requires payment
       if (book.price) {
-        // Create PayMob order
-        const orderId = await this.paymobService.createPaymentOrder(book.price);
-        const user = await prisma.user.findUnique({ where: { id: userId } });
-        // Define billing data
-        const billingData = {
-          first_name: user.name,
-          last_name: "",
-          email: user.email,
-          phone_number: user.phone,
-        };
-
-        // Generate Payment Key
-        const paymentKey = await this.paymobService.generatePaymentKey(
-          orderId,
-          book.price,
-          billingData
-        );
-
-        // Construct PayMob Payment URL
-        const iframeId = process.env.PAYMOB_IFRAME_ID;
-        const paymobUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${paymentKey}`;
-
-        // Create the order in the database
-        const order = await prisma.order.create({
-          data: {
-            userId,
-            bookId,
-            price: book.price,
-            points: 0,
-            paymentId: orderId.toString(),
-            status: 'pending',
-          },
-        });
-
-        return { order, paymentUrl: paymobUrl };
+        return this.processPaymentBookOrder(prisma, userId, bookId, book.price);
       }
 
       throw new BadRequestException('Invalid book pricing configuration');
-    });
+    }, transactionOptions);
   }
 
   async findMyOrders(userId: string) {
@@ -233,4 +151,179 @@ export class OrdersService {
   // async remove(id: string) {
   //   return this.prisma.order.delete({ where: { id } });
   // }
+
+  /**
+ * Process a free book order
+ */
+  private async processFreeBookOrder(prisma: any, userId: string, bookId: string) {
+    // Create the order
+    const order = await prisma.order.create({
+      data: {
+        userId,
+        bookId,
+        price: 0,
+        points: 0,
+        status: 'completed',
+      },
+      include: {
+        book: {
+          include: {
+            Author: true
+          }
+        },
+        user: true
+      }
+    });
+
+    // Add the book to user's myBooks
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        myBooks: {
+          connect: { id: bookId },
+        },
+      },
+    });
+
+    // Send order confirmation email
+    await this.sendOrderEmail(
+      order,
+      'free',
+      'completed'
+    );
+
+    return { order, paymentUrl: null };
+  }
+  /**
+   * Process a book order using points
+   */
+  private async processPointsBookOrder(prisma: any, userId: string, bookId: string, pricePoints: number) {
+    // Get user details to check points
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    // Check if the user has enough points
+    if (user.points < pricePoints) {
+      throw new BadRequestException('Not enough points');
+    }    // Deduct points from user and connect book
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        points: user.points - pricePoints,
+        myBooks: {
+          connect: { id: bookId },
+        },
+      },
+    });
+
+    // Create the order
+    const order = await prisma.order.create({
+      data: {
+        userId,
+        bookId,
+        price: 0,
+        points: pricePoints,
+        status: 'completed',
+      },
+      include: {
+        book: {
+          include: {
+            Author: true
+          }
+        },
+        user: true
+      }
+    });
+
+    // Send order confirmation email
+    await this.sendOrderEmail(
+      order,
+      'points',
+      'completed',
+      undefined,
+      pricePoints
+    );
+
+    return { order, paymentUrl: null };
+  }
+  /**
+   * Process a book order requiring payment
+   */
+  private async processPaymentBookOrder(prisma: any, userId: string, bookId: string, price: number) {
+    // Create PayMob order
+    const orderId = await this.paymobService.createPaymentOrder(price);
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
+    // Define billing data
+    const billingData = {
+      first_name: user.name,
+      last_name: "",
+      email: user.email,
+      phone_number: user.phone,
+    };
+
+    // Generate Payment Key
+    const paymentKey = await this.paymobService.generatePaymentKey(
+      orderId,
+      price,
+      billingData
+    );
+
+    // Construct PayMob Payment URL
+    const iframeId = process.env.PAYMOB_IFRAME_ID;
+    const paymobUrl = `https://accept.paymob.com/api/acceptance/iframes/${iframeId}?payment_token=${paymentKey}`;
+
+    // Create the order in the database
+    const order = await prisma.order.create({
+      data: {
+        userId,
+        bookId,
+        price: price,
+        points: 0,
+        paymentId: orderId.toString(),
+        status: 'pending',
+      },
+      include: {
+        book: {
+          include: {
+            Author: true
+          }
+        },
+        user: true
+      }
+    });
+
+    // Send order confirmation email with payment link
+    await this.sendOrderEmail(
+      order,
+      'payment',
+      'pending',
+      price,
+      undefined,
+      paymobUrl
+    );
+
+    return { order, paymentUrl: paymobUrl };
+  }  /**
+   * Send order confirmation email
+   */
+  private async sendOrderEmail(order: any, paymentType: 'free' | 'points' | 'payment', status: string, price?: number, points?: number, paymentUrl?: string) {
+    try {
+      await this.mailsService.sendOrderConfirmationEmail(
+        order.user.email,
+        order.id,
+        order.book.title,
+        order.user.name,
+        order.book.Author.name,
+        order.book.description,
+        paymentType,
+        status,
+        price,
+        points,
+        paymentUrl
+      );
+    } catch (error) {
+      console.error('Failed to send order confirmation email:', error);
+      // Don't throw error to avoid disrupting the order process
+    }
+  }
 }

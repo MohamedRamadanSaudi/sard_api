@@ -113,6 +113,7 @@ export class UsersService {
         photo: true,
         gender: true,
         phone: true,
+        isVerified: true,
       }
     });
     if (!user) {

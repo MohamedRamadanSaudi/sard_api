@@ -56,6 +56,21 @@ export class MailsService {
     }
   }
 
+  private async sendEmailWithTemplate(to: string, subject: string, templatePath: string, context: Record<string, any>) {
+    try {
+      const html = await this.renderTemplate(templatePath, context);
+      await this.transporter.sendMail({
+        to: to,
+        from: this.from,
+        subject: subject,
+        html: html,
+      });
+    } catch (err) {
+      console.error('Error sending email:', err);
+      throw new HttpException("Error while sending email", HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async sendEmailResetPasswordCode(email: string) {
     joiValidator({ email: email }, Joi.object({ email: Joi.string().email().required() }));
     const { code, hashedCode } = await this.generateCode();
@@ -100,5 +115,69 @@ export class MailsService {
     });
     // Send the email
     this.sendMail(email, code, expiryInMinutes, "تحقق البريد الإلكتروني لتطبيق سَرد", templatePath);
+  }
+
+  async sendOrderConfirmationEmail(
+    email: string,
+    orderId: string,
+    bookTitle: string,
+    userName: string,
+    authorName: string,
+    description: string,
+    paymentMethod: 'free' | 'points' | 'payment',
+    status: string,
+    price?: number,
+    points?: number,
+    paymentUrl?: string
+  ) {
+    joiValidator({ email: email }, Joi.object({ email: Joi.string().email().required() }));
+
+    const templatePath = path.join(process.cwd(), 'src', 'mails', 'templates', 'orderConfirmation.pug');
+
+    await this.sendEmailWithTemplate(
+      email,
+      "تأكيد طلب كتاب من سَرد",
+      templatePath,
+      {
+        userName,
+        bookTitle,
+        authorName,
+        description,
+        orderId,
+        paymentMethod,
+        status,
+        price,
+        points,
+        paymentUrl
+      }
+    );
+  }
+
+  async sendOrderStatusUpdateEmail(
+    email: string,
+    orderId: string,
+    bookTitle: string,
+    userName: string,
+    status: string,
+    errorMessage?: string,
+    retryPaymentUrl?: string
+  ) {
+    joiValidator({ email: email }, Joi.object({ email: Joi.string().email().required() }));
+
+    const templatePath = path.join(process.cwd(), 'src', 'mails', 'templates', 'orderStatusUpdate.pug');
+
+    await this.sendEmailWithTemplate(
+      email,
+      "تحديث حالة طلبك في سَرد",
+      templatePath,
+      {
+        userName,
+        bookTitle,
+        orderId,
+        status,
+        errorMessage,
+        retryPaymentUrl
+      }
+    );
   }
 }
