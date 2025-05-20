@@ -123,10 +123,12 @@ export class OrdersService {
     }
     return order;
   }
-
   async findAll() {
     return this.prisma.order.findMany({
-      include: { book: true },
+      include: { book: true, user: true },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
   }
 

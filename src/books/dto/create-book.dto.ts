@@ -36,7 +36,6 @@ export class CreateBookDto {
   @IsOptional()
   authorId?: string;
 
-  @IsString()
   @IsOptional()
   categoryId?: string[];
 }
