@@ -23,6 +23,7 @@ export class CreateBookDto {
 
   @IsOptional()
   price_points?: number;
+
   @IsOptional()
   @Transform(({ value }) => {
     if (value === 'true' || value === true) return true;

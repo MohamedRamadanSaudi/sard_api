@@ -334,6 +334,7 @@ export class BooksService {
         price: true,
         is_free: true,
         title: true,
+        duration: true,
         description: true,
         Author: {
           select: {
@@ -461,6 +462,9 @@ export class BooksService {
         duration: restBookData.duration ? parseInt(restBookData.duration as any) : undefined,
         price: restBookData.price ? parseFloat(restBookData.price as any) : undefined,
         price_points: restBookData.price_points ? parseInt(restBookData.price_points as any) : undefined,
+        is_free: typeof restBookData.is_free === 'string'
+          ? restBookData.is_free === 'true'
+          : restBookData.is_free,
         ...(coverUrl && { cover: coverUrl }),
         ...(audioUrl && { audio: audioUrl }),
         authorId: authorId || undefined,
