@@ -73,12 +73,12 @@ export class GroqService {
   }
 
   async summarizeBook(bookDescription: string, userId: string) {
-    const prompt = `قم بتلخيص هذا الكتاب بشكل موجز ودقيق مع استخدام التشكيل الكامل: ${bookDescription}`;
+    const prompt = `قم بتلخيص هذا الكتاب بشكل موجز ودقيق مع استخدام التشكيل الكامل بحد أقصي 100 كلمة: ${bookDescription}`;
     return this.chat(prompt, userId);
   }
 
   async generateBookDescription(title: string, genre: string, userId: string) {
-    const prompt = `اكتب وصفاً جذاباً لكتاب من فئة ${genre} بعنوان "${title}" مع استخدام التشكيل الكامل للنص العربي`;
+    const prompt = `اكتب وصفاً جذاباً لكتاب من فئة ${genre} بعنوان "${title}" مع استخدام التشكيل الكامل للنص العربي بحد أقصي 100 كلمة`;
     return this.chat(prompt, userId);
   }
 
