@@ -106,7 +106,14 @@ export class PaymobService {
       where: { paymentId: order.toString() },
       include: {
         book: true,
-        user: true
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true
+          }
+        }
       }
     });
 
@@ -126,7 +133,14 @@ export class PaymobService {
       },
       include: {
         book: true,
-        user: true
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true
+          }
+        }
       }
     });
 

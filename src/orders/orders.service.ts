@@ -176,13 +176,29 @@ export class OrdersService {
         points: 0,
         status: 'completed',
       },
-      include: {
+      select: {
         book: {
-          include: {
-            Author: true
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            cover: true,
+            duration: true,
+            Author: {
+              select: {
+                name: true,
+              }
+            }
           }
         },
-        user: true
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true
+          }
+        }
       }
     });
 
@@ -235,13 +251,29 @@ export class OrdersService {
         points: pricePoints,
         status: 'completed',
       },
-      include: {
+      select: {
         book: {
-          include: {
-            Author: true
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            cover: true,
+            duration: true,
+            Author: {
+              select: {
+                name: true,
+              }
+            }
           }
         },
-        user: true
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true
+          }
+        }
       }
     });
 
@@ -293,13 +325,29 @@ export class OrdersService {
         paymentId: orderId.toString(),
         status: 'pending',
       },
-      include: {
+      select: {
         book: {
-          include: {
-            Author: true
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            cover: true,
+            duration: true,
+            Author: {
+              select: {
+                name: true,
+              }
+            }
           }
         },
-        user: true
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            phone: true
+          }
+        }
       }
     });
 
