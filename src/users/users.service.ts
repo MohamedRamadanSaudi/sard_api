@@ -52,54 +52,88 @@ export class UsersService {
   }
 
 
-  async checkAndUpdateStreak(userId: string) {
-    const user = await this.prisma.user.findFirst({
-      where: { id: userId },
+  async getUserHomeData(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
       select: {
         id: true,
-        lastLoginDate: true,
+        name: true,
+        photo: true,
         streak: true,
         points: true,
+        lastLoginDate: true,
       },
     });
 
     if (!user) {
-      throw new Error('User not found');
-    }
-
-    const today = new Date();
+      throw new BadRequestException('User not found');
+    } const today = new Date();
     const lastLoginDate = user.lastLoginDate ? new Date(user.lastLoginDate) : null;
 
-    // Check if the user logged in yesterday
+    // Check if the user already logged in today
+    const isAlreadyLoggedInToday = lastLoginDate && this.isSameDay(lastLoginDate, today);
+
+    // Check if the user logged in yesterday (consecutive login)
     const isConsecutiveLogin = lastLoginDate && this.isConsecutiveDay(lastLoginDate, today);
 
     let updatedStreak = user.streak;
     let updatedPoints = user.points;
-
-    if (isConsecutiveLogin) {
-      updatedStreak += 1; // Increment streak
-      if (updatedStreak === 7) {
-        updatedPoints += 10; // Award 10 points
-        updatedStreak = 0; // Reset streak
+    let message: string;    // If user hasn't logged in today, process the login
+    if (!isAlreadyLoggedInToday) {
+      if (isConsecutiveLogin) {
+        // User logged in yesterday, increment streak
+        updatedStreak += 1;
+        if (updatedStreak === 7) {
+          // After 7 consecutive days, award 10 points and reset streak to 0
+          updatedPoints += 10;
+          updatedStreak = 0;
+          message = "رائع! لقد حصلت على 10 نقاط 👏 استمر في استخدام التطبيق يوميًا لبدء سلسلة إنجازاتك!";
+        } else {
+          // Continue streak without points
+          if (updatedStreak === 1) {
+            message = "أحسنت! لقد بدأت سلسلة إنجازاتك 🔥 حاول الحفاظ على استمرارها يوميًا!";
+          } else {
+            message = `سلسلتك مستمرة منذ ${updatedStreak} أيام! 💪 لا تتوقف الآن، استمر لتحقيق المزيد!`;
+          }
+        }
+      } else {
+        // User didn't log in yesterday, reset streak
+        if (lastLoginDate === null) {
+          // First time login
+          updatedStreak = 1;
+        } else {
+          // Broke the streak, start new one
+          updatedStreak = 1;
+        }
+        message = "أحسنت! لقد بدأت سلسلة إنجازاتك 🔥 حاول الحفاظ على استمرارها يوميًا!";
       }
+
+      // Update the user's streak, points, and last login date
+      await this.prisma.user.update({
+        where: { id },
+        data: {
+          streak: updatedStreak,
+          points: updatedPoints,
+          lastLoginDate: today,
+        },
+      });
     } else {
-      updatedStreak = 1; // Reset streak to 1 for the current login
+      // User already logged in today, just show appropriate message based on current streak
+      if (updatedStreak === 0) {
+        message = "رائع! لقد حصلت على 10 نقاط 👏 استمر في استخدام التطبيق يوميًا لبدء سلسلة إنجازاتك!";
+      } else if (updatedStreak === 1) {
+        message = "أحسنت! لقد بدأت سلسلة إنجازاتك 🔥 حاول الحفاظ على استمرارها يوميًا!";
+      } else {
+        message = `سلسلتك مستمرة منذ ${updatedStreak} أيام! 💪 لا تتوقف الآن، استمر لتحقيق المزيد!`;
+      }
     }
 
-    // Update the user's streak, points, and last login date
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: {
-        streak: updatedStreak,
-        points: updatedPoints,
-        lastLoginDate: today,
-      },
-    });
-
     return {
-      message: 'Streak updated successfully',
+      name: user.name,
+      photo: user.photo,
       streak: updatedStreak,
       points: updatedPoints,
+      message,
     };
   }
 
@@ -115,22 +149,6 @@ export class UsersService {
         phone: true,
         isVerified: true,
       }
-    });
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-    return user;
-  }
-
-  async getUserHomeData(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        name: true,
-        photo: true,
-        streak: true,
-        points: true,
-      },
     });
     if (!user) {
       throw new BadRequestException('User not found');
@@ -234,6 +252,10 @@ export class UsersService {
 
   // Helper function to check if two dates are consecutive days
   private isConsecutiveDay(previousDate: Date, currentDate: Date): boolean {
+    if (this.isSameDay(previousDate, currentDate)) {
+      return false;
+    }
+
     const previousDay = new Date(previousDate);
     previousDay.setHours(0, 0, 0, 0); // Normalize to start of the day
 
@@ -246,4 +268,11 @@ export class UsersService {
     return dayDifference === 1; // True if the difference is exactly 1 day
   }
 
+  private isSameDay(date1: Date, date2: Date): boolean {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate();
+  }
 }

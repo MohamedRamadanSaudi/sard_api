@@ -20,16 +20,6 @@ export class UsersController {
     return this.usersService.createUser(createUserDto);
   }
 
-  @Post('check-streak')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'user')
-  checkStreak(@Req() req) {
-    return this.usersService.checkAndUpdateStreak(req.user.userId);
-    // if the streak in the response is 0, show a message to the user he has earned 10 points
-    // if the streak is 1, show a message to the user he started a streak
-    // if the streak is 2 or more, show a message to the user to keep going
-  }
-
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
