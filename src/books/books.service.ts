@@ -105,13 +105,30 @@ export class BooksService {
     }
 
     // Create a new review
-    return await this.prisma.review.create({
+    const newReview = await this.prisma.review.create({
       data: {
         userId,
         bookId,
         numberOfStars,
       },
     });
+
+    // Calculate and update the book's rating after adding the review
+    const allReviews = await this.prisma.review.findMany({
+      where: { bookId },
+      select: { numberOfStars: true }
+    });
+
+    const reviewsSum = allReviews.reduce((acc, curr) => acc + curr.numberOfStars, 0);
+    const reviewsAverage = allReviews.length > 0 ? reviewsSum / allReviews.length : 0;
+
+    // Update the book's rating
+    await this.prisma.book.update({
+      where: { id: bookId },
+      data: { rating: reviewsAverage }
+    });
+
+    return newReview;
   }
 
 
@@ -336,6 +353,7 @@ export class BooksService {
         title: true,
         duration: true,
         description: true,
+        rating: true,
         Author: {
           select: {
             name: true,
@@ -366,29 +384,7 @@ export class BooksService {
       throw new NotFoundException(`Book with ID ${id} not found`);
     }
 
-    // get reviews average
-    const reviews = await this.prisma.review.findMany({
-      where: { bookId: id },
-      select: {
-        numberOfStars: true
-      }
-    });
-    const reviewsCount = reviews.length;
-    const reviewsSum = reviews.reduce((acc, curr) => acc + curr.numberOfStars, 0);
-    const reviewsAverage = reviewsCount > 0 ? reviewsSum / reviewsCount : 0;
-
-    // update book object with rating every time it's fetched " just for now :) ", because recommended books are fetched based on rating
-    await this.prisma.book.update({
-      where: { id },
-      data: {
-        rating: reviewsAverage
-      }
-    })
-
-    return {
-      ...book,
-      rating: reviewsAverage
-    };
+    return book
   }
 
   async findOneForUpdateOrDelete(id: string) {
