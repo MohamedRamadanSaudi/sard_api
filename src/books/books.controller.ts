@@ -94,8 +94,12 @@ export class BooksController {
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'user')
-  findOne(@Param('id') id: string) {
-    return this.booksService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @Req() req
+  ) {
+    const userId = req.user.userId; // Extract user ID from JWT
+    return this.booksService.findOne(id, userId);
   }
 
   @Patch(':id')

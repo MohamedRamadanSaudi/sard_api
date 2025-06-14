@@ -341,7 +341,18 @@ export class BooksService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string) {
+    // If userId is provided get his points
+    let userPoints = 0;
+    if (userId) {
+      const user = await this.prisma.user.findFirst({
+        where: { id: userId },
+        select: { points: true }
+      });
+      if (user) {
+        userPoints = user.points;
+      }
+    }
     const book = await this.prisma.book.findFirst({
       where: { id },
       select: {
@@ -384,7 +395,10 @@ export class BooksService {
       throw new NotFoundException(`Book with ID ${id} not found`);
     }
 
-    return book
+    return {
+      ...book,
+      userPoints
+    }
   }
 
   async findOneForUpdateOrDelete(id: string) {
