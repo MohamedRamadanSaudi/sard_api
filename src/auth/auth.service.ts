@@ -225,6 +225,12 @@ export class AuthService {
         password: hashedPassword,
         passwordResetOtp: null,
         passwordResetOtpExpiry: null
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isVerified: true,
       }
     });
   }

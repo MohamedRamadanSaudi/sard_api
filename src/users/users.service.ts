@@ -195,6 +195,7 @@ export class UsersService {
         photo: true,
         gender: true,
         phone: true,
+        email: true,
       },
     });
   }
