@@ -22,6 +22,9 @@ export class AuthController {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    if (user.isVerified === false) {
+      throw new UnauthorizedException('Please verify your email before logging in');
+    }
     return this.authService.login(user);
   }
 
