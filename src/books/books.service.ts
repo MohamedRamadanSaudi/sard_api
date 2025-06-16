@@ -524,12 +524,12 @@ export class BooksService {
 
   async generateBookSummary(id: string) {
     const book = await this.findOne(id);
-    const summary = await this.groqService.summarizeBook(book.description, "default-user");
+    const summary = await this.groqService.summarizeBook(book.description);
     return { summary };
   }
 
   async suggestDescription(title: string, genre: string) {
-    const description = await this.groqService.generateBookDescription(title, genre, "default-user");
+    const description = await this.groqService.generateBookDescription(title, genre);
     return { description };
   }
 }
