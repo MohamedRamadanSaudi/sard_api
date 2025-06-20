@@ -365,6 +365,7 @@ export class BooksService {
         duration: true,
         description: true,
         rating: true,
+        ...(!userId && { audio: true }),
         Author: {
           select: {
             name: true,

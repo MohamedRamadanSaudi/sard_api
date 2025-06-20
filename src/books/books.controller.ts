@@ -99,6 +99,9 @@ export class BooksController {
     @Req() req
   ) {
     const userId = req.user.userId; // Extract user ID from JWT
+    if (req.user.role === 'admin') {
+      return this.booksService.findOne(id, null);
+    }
     return this.booksService.findOne(id, userId);
   }
 
