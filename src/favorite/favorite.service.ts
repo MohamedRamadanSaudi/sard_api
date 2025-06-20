@@ -78,6 +78,9 @@ export class FavoriteService {
           }
         }
       },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
     // get user favorite books and modify the response to include is_favorite field and set it to true if the book is in the user favorite books
     const user = await this.prisma.user.findFirst({
